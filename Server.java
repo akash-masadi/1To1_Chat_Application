@@ -1,10 +1,8 @@
 
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.BorderLayout;
+
 import javax.swing.*;
-import javax.swing.border.Border;
-import javax.swing.plaf.ColorUIResource;
 import java.io.*;
 import java.net.*;
 
@@ -13,6 +11,7 @@ public class Server extends JFrame implements ActionListener
    String type="Server";
     public  static JTextField T1;
     public JPanel pbt;
+    public JScrollPane sp; 
     public JButton b1;
     public JMenu m;
     public JLabel l1;
@@ -27,12 +26,11 @@ public class Server extends JFrame implements ActionListener
   {
     this.type=temp;
     ServerSocket ss=new ServerSocket(7777);
-    createGUI();
     Socket s=ss.accept();
+    createGUI();
     d=new DataInputStream(s.getInputStream());
     dr=new DataOutputStream(s.getOutputStream());
     handleEvents();
-    recieveText();
   }
 
   public void handleEvents()
@@ -42,8 +40,7 @@ public class Server extends JFrame implements ActionListener
             {
                 if(e.getKeyCode()==KeyEvent.VK_ENTER){
                 try{
-                  sendText(Server.T1.getText());
-                  addToTextArea(Server.T1.getText());
+                  sendText();
                 }
                 catch(Exception ee){ee.printStackTrace();
               }
@@ -51,7 +48,6 @@ public class Server extends JFrame implements ActionListener
           }
           });
         b1.addActionListener(this);
-
     }
   public void createGUI()
     {
@@ -64,7 +60,6 @@ public class Server extends JFrame implements ActionListener
         this.setDefaultCloseOperation(EXIT_ON_CLOSE);
         this.getContentPane().setBackground(new Color(206, 235, 234));
         this.setLayout(new BorderLayout());
-        
 
         //labels
         l1= new JLabel("Welcome to ChatMate!");
@@ -81,43 +76,37 @@ public class Server extends JFrame implements ActionListener
         T1.setHorizontalAlignment(SwingConstants.CENTER);
         T1.addActionListener(this);
         
-
-
         //buttons
         Icon isend = new ImageIcon("./Images/send.png");
         b1=new JButton(isend);
-        //b1.setFocusPainted(false); 
         b1.setContentAreaFilled(false);
         b1.setFont(font);
         b1.setBounds(0,0,10,10);
         b1.setBorderPainted(false); 
         b1.setBackground(new Color(94, 251, 110));
         add(b1);
-        
-    
-
 
         //TextArea for Chat
         ta= new JTextArea();
         ta.setFont(font);
         ta.setBackground(new Color(173, 223, 255));
         ta.setEditable(false);
-        //ta.setBounds(100,100,300,300);
-        //ta.setBounds(10,10, 100, 100);
 
         //Panel for Buttons and Textfield
         pbt=new JPanel();
         pbt.setBackground(new Color(152, 175, 199));
         pbt.setSize(100,100);
-        // pbt.setLayout(new FlowLayout());
-                
+        
+        //Scrollpane
+        // sp =new JScrollPane();
+        // sp.setLayout(new ScrollPaneLayout());
         //adding
         this.add(l1,BorderLayout.NORTH);
         this.pbt.add(T1);
         this.pbt.add(b1);
         this.add(pbt,BorderLayout.SOUTH);
+        //this.sp.add(ta);
         this.add(ta,BorderLayout.CENTER);
-
         this.setVisible(true);
     } 
 
@@ -125,40 +114,40 @@ public class Server extends JFrame implements ActionListener
     {
       try
         {
-          sendText(Server.T1.getText());
-          addToTextArea(Server.T1.getText());
+          sendText();
         }
         catch(Exception e)
         {
           e.printStackTrace();
         }
    }
-
-    public void addToTextArea(String temp) throws Exception
-    {
-        
-        this.ta.append(temp+"\n");//recieving Text
-        System.out.println(temp);//consoleeee  which i entered
-        this.T1.setText("");
-    }
-  public void sendText(String temp) throws Exception
+  public void sendText() throws Exception
   {
-    this.addToTextArea("Server->"+temp);
-    T1.update(T1.getGraphics());
+    str1=Server.T1.getText();
+    this.ta.append("Server>"+str1+"\n");
     this.T1.setText("");
-    System.out.println("Trying to send ");
-    dr.writeUTF(temp);
-    recieveText();
+    dr.writeUTF(str1);
   }
-  public void recieveText() throws Exception
+  public void receiveText() throws Exception
   {
-    System.out.println("Trying to recieve ");
     str1=d.readUTF();
-    this.addToTextArea("Client->"+str1);
+    this.ta.append("Client>"+str1+"\n");
+    this.T1.setText("");
   }
   public static void main(String args[]) throws Exception
   {
-    Server sobj=new Server("Server");
+   Server sobj=new Server("Server");
+    Thread t1=new Thread( new Thread() {
+      public void run(){
+        try{
+          while(true){
+          sobj.receiveText();
+          }
+            }
+        catch(Exception e){}
+      }
+         });
+    t1.start();
   }
 }
  
